@@ -329,5 +329,8 @@ include("lattice_boltzmann_3d.jl")
 abstract type AbstractAcousticPerturbationEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
 include("acoustic_perturbation_2d.jl")
 
+abstract type AbstractGaburroEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
+include("gaburro_1d.jl")
+include("gaburro_2d.jl")
 
 end # @muladd
