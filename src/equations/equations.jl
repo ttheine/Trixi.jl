@@ -348,16 +348,14 @@ include("lattice_boltzmann_3d.jl")
 abstract type AbstractAcousticPerturbationEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
 include("acoustic_perturbation_2d.jl")
 
-<<<<<<< HEAD
 abstract type AbstractGaburroEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
 include("gaburro_1d.jl")
 include("gaburro_2d.jl")
-=======
+
 # Linearized Euler equations
 abstract type AbstractLinearizedEulerEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
 include("linearized_euler_2d.jl")
 
 abstract type AbstractEquationsParabolic{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
->>>>>>> 707f7aa267987caf5fae643d55644e92a1b24c83
 
 end # @muladd

@@ -134,16 +134,13 @@ export AcousticPerturbationEquations2D,
        InviscidBurgersEquation1D,
        LatticeBoltzmannEquations2D, LatticeBoltzmannEquations3D,
        ShallowWaterEquations1D, ShallowWaterEquations2D,
-<<<<<<< HEAD
-       Gaburro2D, Gaburro1D
-=======
+       Gaburro2D, Gaburro1D,
        LinearizedEulerEquations2D
 
 export LaplaceDiffusion2D,
        CompressibleNavierStokesDiffusion2D
 
 export GradientVariablesPrimitive, GradientVariablesEntropy
->>>>>>> 707f7aa267987caf5fae643d55644e92a1b24c83
 
 export flux, flux_central, flux_lax_friedrichs, flux_hll, flux_hllc, flux_hlle, flux_godunov,
        flux_chandrashekar, flux_ranocha, flux_derigs_etal, flux_hindenlang_gassner,
@@ -159,14 +156,11 @@ export flux, flux_central, flux_lax_friedrichs, flux_hll, flux_hllc, flux_hlle, 
        FluxRotated,
        flux_shima_etal_turbo, flux_ranocha_turbo,
        FluxHydrostaticReconstruction,
-<<<<<<< HEAD
-       flux_nonconservative_gaburro
-=======
+       flux_nonconservative_gaburro,
        FluxUpwind
 
 export splitting_steger_warming, splitting_vanleer_haenel,
        splitting_coirier_vanleer, splitting_lax_friedrichs
->>>>>>> 707f7aa267987caf5fae643d55644e92a1b24c83
 
 export initial_condition_constant,
        initial_condition_gauss,
