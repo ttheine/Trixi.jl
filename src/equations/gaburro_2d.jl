@@ -286,8 +286,8 @@ end
   if alpha < 0.1
     p = 0.0
   else
-    p = equations.k0 * ((alpha_rho/equations.rho_0)^(equations.gamma) - 1)
-    #p = equations.k0 * alpha_rho
+    #p = equations.k0 * ((alpha_rho/equations.rho_0)^(equations.gamma) - 1)
+    p = alpha_rho
   end
   return p
 end
