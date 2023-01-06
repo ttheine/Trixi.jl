@@ -24,7 +24,7 @@ struct Gaburro2D{RealT<:Real} <: AbstractGaburroEquations{2, 4}
 end
     
     
-have_nonconservative_terms(::Gaburro2D) = Val(true)
+have_nonconservative_terms(::Gaburro2D) = True()
 varnames(::typeof(cons2cons), ::Gaburro2D) = ("alpha_rho", "alpha_rho_v1", "alpha_rho_v2", "alpha")
 varnames(::typeof(cons2prim), ::Gaburro2D) = ("rho", "v1", "v2", "alpha")
     

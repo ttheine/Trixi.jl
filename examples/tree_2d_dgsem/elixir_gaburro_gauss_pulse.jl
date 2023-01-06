@@ -102,7 +102,7 @@ visualization_callback = VisualizationCallback(; interval=50,
                             #variable_names=["rho"],
                             show_mesh=false,
                             plot_data_creator=PlotData2D,
-                            #plot_creator=save_my_plot,
+                            plot_creator=save_my_plot,
                             )
 
 callbacks = CallbackSet(alive_callback, visualization_callback, stepsize_callback)

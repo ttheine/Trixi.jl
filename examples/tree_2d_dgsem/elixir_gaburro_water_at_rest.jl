@@ -1,5 +1,7 @@
 using OrdinaryDiffEq
 using Trixi
+using Plots
+using Printf
 
 
 equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
@@ -50,7 +52,7 @@ coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=2,
+                initial_refinement_level=6,
                 n_cells_max=30_000, periodicity=(false,false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
@@ -65,7 +67,37 @@ analysis_interval = 100
 
 stepsize_callback = StepsizeCallback(cfl=0.1)
 
-callbacks = CallbackSet(stepsize_callback)
+function save_my_plot(plot_data, variable_names;
+  show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
+  time=nothing, timestep=nothing)
+
+# Gather subplots
+plots = []
+for v in variable_names
+  push!(plots, Plots.plot(plot_data[v]; plot_arguments...))
+end
+if show_mesh
+  push!(plots, Plots.plot(getmesh(plot_data); plot_arguments...))
+end
+
+# Create plot
+Plots.plot(plots...,)
+
+# Determine filename and save plot
+filename = joinpath("out", @sprintf("solution_%06d.png", timestep))
+Plots.savefig(filename)
+end
+
+#visualization_callback = VisualizationCallback(plot_creator=my_save_plot,interval=10, clims=(0,1.1), show_mesh=true)
+visualization_callback = VisualizationCallback(; interval=1000,
+                          solution_variables=cons2prim,
+                          #variable_names=["rho"],
+                          show_mesh=false,
+                          plot_data_creator=PlotData2D,
+                          #plot_creator=save_my_plot,
+                          )
+
+callbacks = CallbackSet(stepsize_callback, visualization_callback)
 
 ###############################################################################
 # run the simulation
