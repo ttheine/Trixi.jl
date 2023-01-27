@@ -44,9 +44,10 @@ function initial_condition_constant(x, t, equations::Gaburro2D)
 end
 
 function source_terms_gravity(u, x, t, equations::Gaburro2D)
+  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
   du1 = 0.0
   du2 = 0.0
-  du3 = -u[1] * equations.gravity
+  du3 = -alpha_rho * equations.gravity
   du4 = 0.0
 
   return SVector(du1, du2, du3, du4)
@@ -87,14 +88,24 @@ end
   # compute the normal velocity
   u_normal = normal[1] * u_inner[2] + normal[2] * u_inner[3]
 
+  if(normal[1] == 1.0 || normal[1] == -1.0)
+    u_boundary = SVector(u_inner[1], -u_inner[2], u_inner[3], u_inner[4])
+  else
+    u_boundary = SVector(u_inner[1], u_inner[2], -u_inner[3], u_inner[4])
+  end
+
   # create the "external" boundary solution state
-  u_boundary = SVector(u_inner[1],
-  u_inner[2] - 1.0 * u_normal * normal[1],
-  u_inner[3] - 1.0 * u_normal * normal[2],
-  u_inner[4])
+  #u_boundary = SVector(u_inner[1],
+  #u_inner[2] - 1.0 * u_normal * normal[1],
+  #u_inner[3] - 1.0 * u_normal * normal[2],
+  #u_inner[4])
 
   # calculate the boundary flux
-  flux = surface_flux_function(u_inner, u_boundary, normal_direction, equations)
+  if(normal[1] == 1.0 || normal[2] == 1.0)
+    flux = surface_flux_function(u_inner, u_boundary, normal_direction, equations)
+  else
+    flux = surface_flux_function(u_boundary, u_inner, normal_direction, equations)
+  end
 
   return flux
 end
@@ -276,8 +287,8 @@ end
     
     
 @inline function density(u, equations::Gaburro2D)
-  rho = u[1]/u[4]
-  return rho
+  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
+  return alpha_rho/alpha
 end
     
     
@@ -286,8 +297,8 @@ end
   if alpha < 0.1
     p = 0.0
   else
-    #p = equations.k0 * ((alpha_rho/equations.rho_0)^(equations.gamma) - 1)
-    p = alpha_rho
+    p = equations.k0 * ((alpha_rho/equations.rho_0)^(equations.gamma) - 1)
+    #p = alpha_rho
   end
   return p
 end

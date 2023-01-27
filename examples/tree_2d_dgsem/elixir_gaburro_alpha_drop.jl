@@ -1,16 +1,24 @@
 using OrdinaryDiffEq
+using Revise
 using Trixi
 using Printf
 
-equations = Gaburro2D(1.0, 1.0*10^6, 1000.0, 9.81)
+equations = Gaburro2D(1.0, 1.0*10^8, 1000.0, 9.81)
 
 function initial_condition_const(x, t, equations::Gaburro2D)
 
-    # liquid domain
-    rho = 1020.0
-    v1 = 0.0
-    v2 = 0.0
-    alpha = 1.0
+    if(((x[1]^2 + x[2]^2) <= 2))
+      # liquid domain   
+      rho = 1050.0
+      v1 = 0.0
+      v2 = 0.0
+      alpha = 1.0
+  else
+      rho = 1050.0
+      v1 = 0.0
+      v2 = 0.0
+      alpha = 0.8
+  end
 
     return prim2cons(SVector(rho, v1, v2, alpha), equations)
 end
@@ -25,8 +33,6 @@ boundary_conditions = (x_neg=boundary_condition_wall,
   
 volume_flux = (flux_central, flux_nonconservative_gaburro)
 surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
-#solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro),
-#                 volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 basis = LobattoLegendreBasis(3)
 indicator_sc = IndicatorHennemannGassner(equations, basis,
@@ -39,12 +45,12 @@ volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
                                                   volume_flux_fv=surface_flux)
 solver = DGSEM(basis, surface_flux, volume_integral)
 
-coordinates_min = (-0.5, 0.0) # minimum coordinates (min(x), min(y))
-coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
+coordinates_min = (-2.0, -2.0) # minimum coordinates (min(x), min(y))
+coordinates_max = ( 2.0, 2.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=4,
+                initial_refinement_level=5,
                 n_cells_max=10_000,
                 periodicity=false)
 
