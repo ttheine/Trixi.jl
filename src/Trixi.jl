@@ -137,7 +137,7 @@ export AcousticPerturbationEquations2D,
        LinearizedEulerEquations2D
 
 export LaplaceDiffusion2D,
-       CompressibleNavierStokesDiffusion2D
+       CompressibleNavierStokesDiffusion2D, CompressibleNavierStokesDiffusion3D
 
 export GradientVariablesPrimitive, GradientVariablesEntropy
 
@@ -184,7 +184,8 @@ export source_terms_gravity
 export cons2cons, cons2prim, prim2cons, cons2macroscopic, cons2state, cons2mean,
        cons2entropy, entropy2cons
 export density, pressure, density_pressure, velocity, global_mean_vars, equilibrium_distribution, waterheight_pressure
-export entropy, energy_total, energy_kinetic, energy_internal, energy_magnetic, cross_helicity
+export entropy, energy_total, energy_kinetic, energy_internal, energy_magnetic, cross_helicity,
+       enstrophy
 export lake_at_rest_error
 export ncomponents, eachcomponent
 
