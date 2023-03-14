@@ -3,28 +3,10 @@ using Plots
 using Printf
 using OrdinaryDiffEq
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
+equations = Gaburro2D(1.0, 6.54*10^5, 1000.0, 9.81)
 
-function initial_condition_const(x, t, equations::Gaburro2D)
-    if(x[2] < 0.4)
-        # liquid domain
-        rho = 1000.0
-        v1 = 0.0
-        v2 = 0.0
-        alpha = 1.0 - 10^-3
-    else
-        # liquid domain
-        rho = 1000.0
-        v1 = 0.0
-        v2 = 0.0
-        alpha = 10^-3
-    end
-    
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
-end
-
-function initial_condition_line(x, t, equations::Gaburro2D)
-  if((-x[1] + x[2]) <= 0.5)
+function initial_condition_dry_bed(x, t, equations::Gaburro2D)
+  if((x[1] <= 0.0) && (x[2] <= 0.36545))
       # liquid domain
       rho = 1000.0
       v1 = 0.0
@@ -40,25 +22,8 @@ function initial_condition_line(x, t, equations::Gaburro2D)
   return prim2cons(SVector(rho, v1, v2, alpha), equations)
 end
 
-function initial_condition_exp(x, t, equations::Gaburro2D)
-  if(x[2] < 0.4)
-      # liquid domain
-      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.4))
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 1.0 - 10^-3
-  else
-      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.0))
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 10^-3
-  end
-  
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
-end
-
-function initial_condition_sin(x, t, equations::Gaburro2D)
-  if((x[2] - x[1]) <= 0.5)
+function initial_condition_wet_bed(x, t, equations::Gaburro2D)
+  if(((x[1] <= 0.0) && (x[2] <= 0.375)) || ((x[1] >= 0.0) && (x[2] <= 0.1875)))
       # liquid domain
       rho = 1000.0
       v1 = 0.0
@@ -74,12 +39,12 @@ function initial_condition_sin(x, t, equations::Gaburro2D)
   return prim2cons(SVector(rho, v1, v2, alpha), equations)
 end
   
-initial_condition = initial_condition_line
+initial_condition = initial_condition_wet_bed
 
-boundary_condition = Dict( :Bottom  => boundary_condition_wall,
-                            :Right  => boundary_condition_wall,
-                            :Top  => boundary_condition_wall,
-                            :Left  => boundary_condition_wall)
+boundary_conditions = (x_neg=boundary_condition_wall,
+                       x_pos=boundary_condition_wall,
+                       y_neg=boundary_condition_wall,
+                       y_pos=boundary_condition_wall,)
   
 volume_flux = (flux_central, flux_nonconservative_gaburro)
 surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
@@ -95,19 +60,41 @@ volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
                                                   volume_flux_fv=surface_flux)
 solver = DGSEM(basis, surface_flux, volume_integral)
 
-###############################################################################
-# Get the unstructured quad mesh from a file 
-# create the unstructured mesh from your mesh file
-mesh_file = joinpath("out", "tank.mesh")
+coordinates_min = (-0.5, 0.0) # minimum coordinates (min(x), min(y))
+coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
 
-mesh = UnstructuredMesh2D(mesh_file)
+# Create a uniformly refined mesh with periodic boundaries
+mesh = TreeMesh(coordinates_min, coordinates_max,
+                initial_refinement_level=8,
+                n_cells_max=100_000, periodicity=(false,false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
-                source_terms=source_terms_gravity, boundary_conditions=boundary_condition)
+                source_terms=source_terms_gravity, boundary_conditions=boundary_conditions)
 
-tspan = (0.0, 1.0)
+tspan = (0.0, 4.0)
 ode = semidiscretize(semi, tspan)
 
+#amr_indicator = IndicatorHennemannGassner(semi,
+ #                                         alpha_max=0.5,
+  #                                        alpha_min=0.001,
+   #                                       alpha_smooth=true,
+    #                                      variable=first)
+
+amr_indicator = IndicatorLöhner(semi, variable=alpha_rho)
+
+#amr_controller = ControllerThreeLevel(semi, amr_indicator,
+ #                                     base_level=2,
+  #                                    med_level=2, med_threshold=0.05,
+   #                                   max_level=6, max_threshold=0.2)
+
+amr_controller = ControllerThreeLevel(semi, amr_indicator,
+                                      base_level=2,
+                                      max_level =5, max_threshold=0.1)
+
+amr_callback = AMRCallback(semi, amr_controller,
+                           interval=1,
+                           adapt_initial_condition=true,
+                           adapt_initial_condition_only_refine=true)
 
 summary_callback = SummaryCallback()
 
@@ -174,7 +161,7 @@ visualization_callback = VisualizationCallback(; interval=500,
                           plot_creator=save_my_plot_density,
                           )
 
-callbacks = CallbackSet(stepsize_callback, visualization_callback, alive_callback)
+callbacks = CallbackSet(stepsize_callback, visualization_callback, alive_callback, amr_callback)
 
 ###############################################################################
 # run the simulation

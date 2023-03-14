@@ -11,13 +11,13 @@ function initial_condition_square(x, t, equations::Gaburro2D)
     if((abs(x[1]) <= 1) & (abs(x[2]) <= 1))
         rho = 1000.0
         alpha = 1.0 - 10^(-3)
-        v1 = 2 * pi * x[2]
-        v2 = -2 * pi * x[1]
+        v1 = -2 * pi * x[2]
+        v2 = 2 * pi * x[1]
     else
         rho = 1000.0
         v1 = 0.0
         v2 = 0.0
-        alpha = 10.0^(-3)
+        alpha = 10^(-3)
     end
     
     return prim2cons(SVector(rho, v1, v2, alpha), equations)
@@ -30,7 +30,7 @@ volume_flux = (flux_central, flux_nonconservative_gaburro)
 surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
 basis = LobattoLegendreBasis(3)
 indicator_sc = IndicatorHennemannGassner(equations, basis,
-                                           alpha_max=0.5,
+                                           alpha_max=1.0,
                                            alpha_min=0.001,
                                            alpha_smooth=true,
                                            variable=density)
@@ -45,19 +45,19 @@ coordinates_max = ( 5.0,  5.0) # maximum coordinates (max(x), max(y))
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
                 initial_refinement_level=6,
-                n_cells_max=30_000,
+                n_cells_max=500_000,
                 periodicity=false)
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, boundary_conditions=boundary_condition_wall)
 
-tspan = (0.0, 2.0/(2*pi))
+tspan = (0.0, 1.0/(2*pi))
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
 
 analysis_interval = 100
 
-stepsize_callback = StepsizeCallback(cfl=0.1)
+stepsize_callback = StepsizeCallback(cfl=0.4)
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
@@ -68,15 +68,17 @@ function save_my_plot(plot_data, variable_names;
   # Gather subplots
   plots = []
   for v in variable_names
-    push!(plots, Plots.plot(plot_data[v]; plot_arguments...))
+    if v == "alpha_rho"
+      push!(plots, Plots.plot(plot_data[v]; plot_arguments...))
+    end
   end
   if show_mesh
     push!(plots, Plots.plot(getmesh(plot_data); plot_arguments...))
   end
 
-  pressure_matrix = equations.k0 .* plot_data.data[1]
-  pressure_matrix = pressure_matrix .- equations.k0
-  push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
+  #pressure_matrix = equations.k0 .* plot_data.data[1]
+  #pressure_matrix = pressure_matrix .- equations.k0
+  #push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
 
   # Create plot
   Plots.plot(plots...,)
@@ -86,11 +88,11 @@ function save_my_plot(plot_data, variable_names;
   Plots.savefig(filename)
 end
 
-visualization_callback = VisualizationCallback(; interval=1000,
-                            solution_variables=cons2prim,
+visualization_callback = VisualizationCallback(; interval=500,
+                            solution_variables=cons2cons,
                             show_mesh=false,
                             plot_data_creator=PlotData2D,
-                            #plot_creator=save_my_plot,
+                            plot_creator=save_my_plot,
                             )
 
 

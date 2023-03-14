@@ -1,5 +1,6 @@
 using OrdinaryDiffEq
 using Trixi
+using Plots
 using Printf
 
 equations = Gaburro2D(1.0, 1.0*10^6, 1000.0, 9.81)
@@ -25,22 +26,22 @@ boundary_conditions = (x_neg=boundary_condition_wall,
   
 volume_flux = (flux_central, flux_nonconservative_gaburro)
 surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
-#solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro),
-#                 volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
+solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro),
+                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 basis = LobattoLegendreBasis(3)
 indicator_sc = IndicatorHennemannGassner(equations, basis,
                                           alpha_max=0.5,
                                           alpha_min=0.001,
                                           alpha_smooth=true,
-                                          variable=density)
+                                          variable=alpha_rho)
 volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
                                                   volume_flux_dg=volume_flux,
                                                   volume_flux_fv=surface_flux)
-solver = DGSEM(basis, surface_flux, volume_integral)
+#solver = DGSEM(basis, surface_flux, volume_integral)
 
-coordinates_min = (-0.5, 0.0) # minimum coordinates (min(x), min(y))
-coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
+coordinates_min = (-6.0, 0.0) # minimum coordinates (min(x), min(y))
+coordinates_max = ( 8.0, 10.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
@@ -51,7 +52,7 @@ mesh = TreeMesh(coordinates_min, coordinates_max,
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver,
                                     source_terms = source_terms_gravity, boundary_conditions=boundary_conditions)
 
-tspan = (0.0, 5.0)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
@@ -75,9 +76,9 @@ function save_my_plot(plot_data, variable_names;
     push!(plots, Plots.plot(getmesh(plot_data); plot_arguments...))
   end
 
-  pressure_matrix = equations.k0 .* plot_data.data[1]
-  pressure_matrix = pressure_matrix .- equations.k0
-  push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
+  #pressure_matrix = equations.k0 .* plot_data.data[1]
+  #pressure_matrix = pressure_matrix .- equations.k0
+  #push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
 
   # Create plot
   Plots.plot(plots...,)
@@ -89,7 +90,7 @@ end
 
 #visualization_callback = VisualizationCallback(plot_creator=my_save_plot,interval=10, clims=(0,1.1), show_mesh=true)
 visualization_callback = VisualizationCallback(; interval=500,
-                            solution_variables=cons2prim,
+                            solution_variables=cons2cons,
                             #variable_names=["rho"],
                             show_mesh=false,
                             plot_data_creator=PlotData2D,

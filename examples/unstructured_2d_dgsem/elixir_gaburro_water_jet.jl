@@ -3,66 +3,14 @@ using Plots
 using Printf
 using OrdinaryDiffEq
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
+equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 0.0)
 
-function initial_condition_const(x, t, equations::Gaburro2D)
-    if(x[2] < 0.4)
-        # liquid domain
-        rho = 1000.0
-        v1 = 0.0
-        v2 = 0.0
-        alpha = 1.0 - 10^-3
-    else
-        # liquid domain
-        rho = 1000.0
-        v1 = 0.0
-        v2 = 0.0
-        alpha = 10^-3
-    end
-    
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
-end
-
-function initial_condition_line(x, t, equations::Gaburro2D)
-  if((-x[1] + x[2]) <= 0.5)
+function initial_condition_water_jet(x, t, equations::Gaburro2D)
+  if((x[2] - sqrt(3)*x[1] <= 0.0) && (x[2] - sqrt(3) * x[1] >= -2.0))
       # liquid domain
       rho = 1000.0
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 1.0 - 10^-3
-  else
-      rho = 1000.0
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 10^-3
-  end
-  
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
-end
-
-function initial_condition_exp(x, t, equations::Gaburro2D)
-  if(x[2] < 0.4)
-      # liquid domain
-      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.4))
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 1.0 - 10^-3
-  else
-      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.0))
-      v1 = 0.0
-      v2 = 0.0
-      alpha = 10^-3
-  end
-  
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
-end
-
-function initial_condition_sin(x, t, equations::Gaburro2D)
-  if((x[2] - x[1]) <= 0.5)
-      # liquid domain
-      rho = 1000.0
-      v1 = 0.0
-      v2 = 0.0
+      v1 = 5 * -0.5
+      v2 = 5 * -sqrt(3)/2.0
       alpha = 1.0 - 10^-3
   else
       rho = 1000.0
@@ -74,11 +22,13 @@ function initial_condition_sin(x, t, equations::Gaburro2D)
   return prim2cons(SVector(rho, v1, v2, alpha), equations)
 end
   
-initial_condition = initial_condition_line
+initial_condition = initial_condition_water_jet
 
 boundary_condition = Dict( :Bottom  => boundary_condition_wall,
                             :Right  => boundary_condition_wall,
-                            :Top  => boundary_condition_wall,
+                            #:Top1  => boundary_condition_wall,
+                            :Top => BoundaryConditionDirichlet(initial_condition_water_jet),
+                            #:Top3  => boundary_condition_wall,
                             :Left  => boundary_condition_wall)
   
 volume_flux = (flux_central, flux_nonconservative_gaburro)
@@ -98,16 +48,15 @@ solver = DGSEM(basis, surface_flux, volume_integral)
 ###############################################################################
 # Get the unstructured quad mesh from a file 
 # create the unstructured mesh from your mesh file
-mesh_file = joinpath("out", "tank.mesh")
+mesh_file = joinpath("out", "tank_waterJet.mesh")
 
 mesh = UnstructuredMesh2D(mesh_file)
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
                 source_terms=source_terms_gravity, boundary_conditions=boundary_condition)
 
-tspan = (0.0, 1.0)
+tspan = (0.0, 2.0)
 ode = semidiscretize(semi, tspan)
-
 
 summary_callback = SummaryCallback()
 
@@ -153,7 +102,7 @@ function save_my_plot_density(plot_data, variable_names;
   title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
   
   Plots.plot(alpha_rho_data, 
-             clim=(0.0,1200.0), 
+             clim=(0.0,1000.0), 
              #colorbar_title="\ndensity",
              title=title,titlefontsize=9, 
              dpi=300,
@@ -169,9 +118,9 @@ end
 visualization_callback = VisualizationCallback(; interval=500,
                           solution_variables=cons2cons,
                           #variable_names=["rho"],
-                          show_mesh=true,
-                          #plot_data_creator=PlotData2D,
-                          plot_creator=save_my_plot_density,
+                          show_mesh=false,
+                          plot_data_creator=PlotData2D,
+                          #plot_creator=save_my_plot_density,
                           )
 
 callbacks = CallbackSet(stepsize_callback, visualization_callback, alive_callback)

@@ -1,5 +1,6 @@
 using OrdinaryDiffEq
 using Trixi
+using Plots
 using Printf
 
 
@@ -17,42 +18,22 @@ end
   
 initial_condition = initial_condition_rest
 
-function boundary_condition_wallG(u_inner, orientation, direction, x, t, surface_flux_function,
-    equations::Gaburro2D)
-  
-    if direction in (1, 2) # x direction
-      u_boundary = SVector(u_inner[1], -u_inner[2], u_inner[3], u_inner[4])
-    else # y direction
-      u_boundary = SVector(u_inner[1], u_inner[2], -u_inner[3], u_inner[4])
-    end
-  
-    # Calculate boundary flux
-    if iseven(direction) # u_inner is "left" of boundary, u_boundary is "right" of boundary
-      flux = surface_flux_function(u_inner, u_boundary, orientation, equations)
-    else # u_boundary is "left" of boundary, u_inner is "right" of boundary
-      flux = surface_flux_function(u_boundary, u_inner, orientation, equations)
-    end
-  
-    return flux
-  end
-  
-
-boundary_conditions = (x_neg=boundary_condition_wallG,
-                       x_pos=boundary_condition_wallG,
-                       y_neg=boundary_condition_wallG,
-                       y_pos=boundary_condition_wallG,)
+boundary_conditions = (x_neg=boundary_condition_wall,
+                       x_pos=boundary_condition_wall,
+                       y_neg=boundary_condition_wall,
+                       y_pos=boundary_condition_wall,)
   
 volume_flux = (flux_central, flux_nonconservative_gaburro)
 surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
 #solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro),
-#                 volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
+ #                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 basis = LobattoLegendreBasis(3)
 indicator_sc = IndicatorHennemannGassner(equations, basis,
                                           alpha_max=0.5,
                                           alpha_min=0.001,
                                           alpha_smooth=true,
-                                          variable=density)
+                                          variable=alpha_rho)
 volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
                                                   volume_flux_dg=volume_flux,
                                                   volume_flux_fv=surface_flux)
@@ -63,7 +44,7 @@ coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=4,
+                initial_refinement_level=3,
                 n_cells_max=30_000, periodicity=(false,false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
@@ -78,7 +59,7 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=0.8)
+stepsize_callback = StepsizeCallback(cfl=0.4)
 
 function save_my_plot(plot_data, variable_names;
   show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
@@ -105,12 +86,12 @@ function save_my_plot(plot_data, variable_names;
   Plots.savefig(filename)
 end
 
-visualization_callback = VisualizationCallback(; interval=1000,
-                          solution_variables=cons2prim,
+visualization_callback = VisualizationCallback(; interval=500,
+                          solution_variables=cons2cons,
                           #variable_names=["rho"],
                           show_mesh=false,
                           plot_data_creator=PlotData2D,
-                          plot_creator=save_my_plot,
+                          #plot_creator=save_my_plot,
                           )
 
 callbacks = CallbackSet(stepsize_callback, visualization_callback, alive_callback)

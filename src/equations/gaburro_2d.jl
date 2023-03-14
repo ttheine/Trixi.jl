@@ -22,13 +22,13 @@ struct Gaburro2D{RealT<:Real} <: AbstractGaburroEquations{2, 4}
     return new{typeof(gamma)}(gamma, k0, rho_0, gravity)
   end
 end
-    
-    
+
+
 have_nonconservative_terms(::Gaburro2D) = True()
 varnames(::typeof(cons2cons), ::Gaburro2D) = ("alpha_rho", "alpha_rho_v1", "alpha_rho_v2", "alpha")
 varnames(::typeof(cons2prim), ::Gaburro2D) = ("rho", "v1", "v2", "alpha")
-    
-    
+
+
 # Set initial conditions at physical location `x` for time `t`
 """
     initial_condition_constant(x, t, equations::Gaburro2D)
@@ -54,8 +54,10 @@ function source_terms_gravity(u, x, t, equations::Gaburro2D)
 end
 
 
-function boundary_condition_wall(u_inner, orientation, direction, x, t, surface_flux_function,
-  equations::Gaburro2D)
+function boundary_condition_wall(u_inner, orientation, 
+                                 direction, x, t,
+                                 surface_flux_function,
+                                 equations::Gaburro2D)
 
   # Boundary state is equal to the inner state except for the velocity. For boundaries
   # in the -x/+x direction, we multiply the velocity in the x direction by -1.
@@ -78,9 +80,9 @@ function boundary_condition_wall(u_inner, orientation, direction, x, t, surface_
 end
 
 @inline function boundary_condition_wall(u_inner, normal_direction::AbstractVector,
-  x, t,
-  surface_flux_function,
-  equations::Gaburro2D)
+                                         x, t,
+                                         surface_flux_function,
+                                         equations::Gaburro2D)
   
   # normalize the outward pointing direction
   normal = normal_direction / norm(normal_direction)
@@ -88,24 +90,14 @@ end
   # compute the normal velocity
   u_normal = normal[1] * u_inner[2] + normal[2] * u_inner[3]
 
-  if(normal[1] == 1.0 || normal[1] == -1.0)
-    u_boundary = SVector(u_inner[1], -u_inner[2], u_inner[3], u_inner[4])
-  else
-    u_boundary = SVector(u_inner[1], u_inner[2], -u_inner[3], u_inner[4])
-  end
-
   # create the "external" boundary solution state
-  #u_boundary = SVector(u_inner[1],
-  #u_inner[2] - 1.0 * u_normal * normal[1],
-  #u_inner[3] - 1.0 * u_normal * normal[2],
-  #u_inner[4])
+  u_boundary = SVector(u_inner[1],
+                       u_inner[2] - 2.0 * u_normal * normal[1],
+                       u_inner[3] - 2.0 * u_normal * normal[2],
+                       u_inner[4])
 
   # calculate the boundary flux
-  if(normal[1] == 1.0 || normal[2] == 1.0)
-    flux = surface_flux_function(u_inner, u_boundary, normal_direction, equations)
-  else
-    flux = surface_flux_function(u_boundary, u_inner, normal_direction, equations)
-  end
+  flux = surface_flux_function(u_inner, u_boundary, normal_direction, equations)
 
   return flux
 end
@@ -135,16 +127,18 @@ end
 # Note, this directional vector is not normalized
 @inline function flux(u, normal_direction::AbstractVector, equations::Gaburro2D)
   rho, v1, v2, alpha = cons2prim(u, equations)
-  p = pressure(u, equations)
+
   v_normal = v1 * normal_direction[1] + v2 * normal_direction[2]
   rho_v_normal = rho * v_normal
+  p = pressure(u, equations)
+
   f1 = alpha * rho_v_normal
   f2 = alpha * rho_v_normal * v1 + alpha * p * normal_direction[1]
   f3 = alpha * rho_v_normal * v2 + alpha * p * normal_direction[2]
   f4 = 0
   return SVector(f1, f2, f3, f4)
 end
-    
+
 @inline function flux_nonconservative_gaburro(u_ll, u_rr, orientation::Integer, equations::Gaburro2D)
   
   v1_ll = u_ll[2]/u_ll[1]
@@ -164,9 +158,9 @@ end
 
 
 @inline function flux_nonconservative_gaburro(u_ll, u_rr,
-  normal_direction_ll::AbstractVector,
-  normal_direction_average::AbstractVector,
-  equations::Gaburro2D)
+                                              normal_direction_ll::AbstractVector,
+                                              normal_direction_average::AbstractVector,
+                                              equations::Gaburro2D)
 
   v1_ll = u_ll[2]/u_ll[1]
   v2_ll = u_ll[3]/u_ll[1]
@@ -181,7 +175,7 @@ end
 
 end
 
-      
+
 # Calculate maximum wave speed for local Lax-Friedrichs-type dissipation as the
 # maximum velocity magnitude plus the maximum speed of sound
 @inline function max_abs_speed_naive(u_ll, u_rr, orientation::Integer, equations::Gaburro2D)
@@ -219,9 +213,9 @@ end
     
   return max(abs(v_ll), abs(v_rr)) + max(c_ll, c_rr) * norm(normal_direction)
 end
-    
-    
-    
+
+
+
 # Calculate minimum and maximum wave speeds for HLL-type fluxes
 @inline function min_max_speed_naive(u_ll, u_rr, orientation::Integer, equations::Gaburro2D)
   rho_ll, v1_ll, v2_ll, alpha_ll = cons2prim(u_ll, equations)
@@ -253,16 +247,16 @@ end
 
   return λ_min, λ_max
 end
-    
-    
+
+
 @inline function max_abs_speeds(u, equations::Gaburro2D)
   rho, v1, v2, alpha = cons2prim(u, equations)
   c = sqrt(equations.gamma * (equations.k0 / equations.rho_0) * (rho/equations.rho_0)^(equations.gamma - 1))
     
   return abs(v1) + c, abs(v2) + c
 end
-    
-    
+
+
 # Convert conservative variables to primitive
 @inline function cons2prim(u, equations::Gaburro2D)
   alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
@@ -273,9 +267,8 @@ end
     
   return SVector(rho, v1, v2, alpha)
 end
-    
-    
-    
+
+
 # Convert primitive to conservative variables
 @inline function prim2cons(prim, equations::Gaburro2D)
   rho, v1, v2, alpha = prim
@@ -284,34 +277,33 @@ end
   alpha_rho_v2  = alpha_rho * v2 
   return SVector(alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha)
 end
-    
-    
+
 @inline function density(u, equations::Gaburro2D)
   alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
   return alpha_rho/alpha
 end
-    
-    
+
+@inline function alpha_rho(u, equations::Gaburro2D)
+  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
+  return alpha_rho
+end
+
 @inline function pressure(u, equations::Gaburro2D)
   alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
   if alpha < 0.1
     p = 0.0
   else
     p = equations.k0 * ((alpha_rho/equations.rho_0)^(equations.gamma) - 1)
-    #p = alpha_rho
   end
   return p
 end
-    
-    
+
 @inline function density_pressure(u, equations::Gaburro2D)
   alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
   rho = alpha_rho / alpha
   rho_times_p = pressure(u,equations) * rho
   return rho_times_p
 end
-    
-    
-    
-end # @muladd
-    
+
+
+end # @muladd  
