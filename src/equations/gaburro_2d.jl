@@ -53,6 +53,17 @@ function source_terms_gravity(u, x, t, equations::Gaburro2D)
   return SVector(du1, du2, du3, du4)
 end
 
+function source_terms_well_balanced(u, x, t, equations::Gaburro2D)
+  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
+  rho = alpha_rho/alpha
+  
+  du1 = 0.0
+  du2 = 0.0
+  du3 = rho * equations.k0/equations.rho_0 * exp(-alpha*equations.gravity*equations.rho_0/equations.k0 * (x[2] - 0.0)) * exp(alpha*equations.gravity*equations.rho_0/equations.k0 * (x[2] - 0.0))
+  du4 = 0.0
+
+  return SVector(du1, du2, du3, du4)
+end
 
 function boundary_condition_wall(u_inner, orientation, 
                                  direction, x, t,
@@ -144,7 +155,7 @@ end
   v1_ll = u_ll[2]/u_ll[1]
   v2_ll = u_ll[3]/u_ll[1]
   alpha_rr = u_rr[4]
-
+  
   z = zero(eltype(u_ll))
 
   if orientation == 1
@@ -164,7 +175,7 @@ end
 
   v1_ll = u_ll[2]/u_ll[1]
   v2_ll = u_ll[3]/u_ll[1]
-  alpha_rr = u_rr[4] * normal_direction_average[1] + u_rr[4] * normal_direction_average[2]
+  alpha_rr = u_rr[4] #* normal_direction_average[1] + u_rr[4] * normal_direction_average[2]
 
   v_dot_n_ll = v1_ll * normal_direction_ll[1] + v2_ll * normal_direction_ll[2]
   z = zero(eltype(u_ll))

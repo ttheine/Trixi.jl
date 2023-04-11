@@ -1,4 +1,5 @@
 using OrdinaryDiffEq
+using Revise
 using Trixi
 using Plots
 using Printf
@@ -48,7 +49,7 @@ mesh = TreeMesh(coordinates_min, coordinates_max,
                 n_cells_max=30_000, periodicity=(false,false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
-                source_terms=source_terms_gravity, boundary_conditions=boundary_conditions)
+                source_terms=source_terms_well_balanced, boundary_conditions=boundary_conditions)
 
 tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
@@ -90,8 +91,8 @@ visualization_callback = VisualizationCallback(; interval=500,
                           solution_variables=cons2cons,
                           #variable_names=["rho"],
                           show_mesh=false,
-                          plot_data_creator=PlotData2D,
-                          #plot_creator=save_my_plot,
+                          #plot_data_creator=PlotData2D,
+                          plot_creator=save_my_plot,
                           )
 
 callbacks = CallbackSet(stepsize_callback, visualization_callback, alive_callback)

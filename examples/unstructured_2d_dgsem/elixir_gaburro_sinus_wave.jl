@@ -105,7 +105,7 @@ mesh = UnstructuredMesh2D(mesh_file)
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
                 source_terms=source_terms_gravity, boundary_conditions=boundary_condition)
 
-tspan = (0.0, 1.0)
+tspan = (0.0, 10.0)
 ode = semidiscretize(semi, tspan)
 
 
@@ -115,34 +115,7 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=0.1)
-
-function save_my_plot(plot_data, variable_names;
-  show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
-  time=nothing, timestep=nothing)
-
-  # Gather subplots
-  plots = []
-  for v in variable_names
-    if v == "alpha_rho"
-      push!(plots, Plots.plot(plot_data[v]; plot_arguments...))
-    end
-  end
-  if show_mesh
-    push!(plots, Plots.plot(getmesh(plot_data); plot_arguments...))
-  end
-
-  #pressure_matrix = equations.k0 .* plot_data.data[1]
-  #pressure_matrix = pressure_matrix .- equations.k0
-  #push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
-
-  # Create plot
-  Plots.plot(plots...,)
-
-  # Determine filename and save plot
-  filename = joinpath("out", @sprintf("solution_%06d.png", timestep))
-  Plots.savefig(filename)
-end
+stepsize_callback = StepsizeCallback(cfl=0.4)
 
 function save_my_plot_density(plot_data, variable_names;
   show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
@@ -153,7 +126,7 @@ function save_my_plot_density(plot_data, variable_names;
   title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
   
   Plots.plot(alpha_rho_data, 
-             clim=(0.0,1200.0), 
+             clim=(0.0,1000.0), 
              #colorbar_title="\ndensity",
              title=title,titlefontsize=9, 
              dpi=300,
