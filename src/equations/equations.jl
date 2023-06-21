@@ -436,7 +436,8 @@ abstract type AbstractAcousticPerturbationEquations{NDIMS, NVARS} <:
               AbstractEquations{NDIMS, NVARS} end
 include("acoustic_perturbation_2d.jl")
 
-abstract type AbstractGaburroEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
+abstract type AbstractGaburroEquations{NDIMS, NVARS} <: 
+              AbstractEquations{NDIMS, NVARS} end
 include("gaburro_2d.jl")
 include("gaburro_3d.jl")
 

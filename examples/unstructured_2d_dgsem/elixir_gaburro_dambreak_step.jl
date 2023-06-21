@@ -12,7 +12,7 @@ function initial_condition_dry_bed(x, t, equations::Gaburro2D)
       v1 = 0.0
       v2 = 0.0
       alpha = 1.0 - 10^-3
-  elseif(x[1] > 0.0) && (x[2] <= 0.201)
+  elseif(x[1] > 0.0) && (x[2] <= 0.501)
       rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.201))
       v1 = 0.0
       v2 = 0.0

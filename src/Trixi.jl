@@ -146,11 +146,8 @@ export AcousticPerturbationEquations2D,
        InviscidBurgersEquation1D,
        LatticeBoltzmannEquations2D, LatticeBoltzmannEquations3D,
        ShallowWaterEquations1D, ShallowWaterEquations2D,
-<<<<<<< HEAD
-       Gaburro2D, Gaburro3D,
-=======
        ShallowWaterTwoLayerEquations1D, ShallowWaterTwoLayerEquations2D,
->>>>>>> 3303ed8c0b8af262a16e96f2ad6dcd84034bbe7b
+       Gaburro2D, Gaburro3D,
        LinearizedEulerEquations2D
 
 export LaplaceDiffusion1D, LaplaceDiffusion2D,
@@ -196,28 +193,18 @@ export boundary_condition_do_nothing,
 
 export initial_condition_convergence_test, source_terms_convergence_test
 export source_terms_harmonic
-<<<<<<< HEAD
-export initial_condition_poisson_nonperiodic, source_terms_poisson_nonperiodic, boundary_condition_poisson_nonperiodic
-export initial_condition_eoc_test_coupled_euler_gravity, source_terms_eoc_test_coupled_euler_gravity, source_terms_eoc_test_euler
+export initial_condition_poisson_nonperiodic, source_terms_poisson_nonperiodic,
+       boundary_condition_poisson_nonperiodic
+export initial_condition_eoc_test_coupled_euler_gravity, 
+       source_terms_eoc_test_coupled_euler_gravity, source_terms_eoc_test_euler
 export source_terms_gravity
 
 export cons2cons, cons2prim, prim2cons, cons2macroscopic, cons2state, cons2mean,
        cons2entropy, entropy2cons
-export density, pressure, density_pressure, velocity, global_mean_vars, equilibrium_distribution, waterheight_pressure, alpha_rho
-export entropy, energy_total, energy_kinetic, energy_internal, energy_magnetic, cross_helicity,
-=======
-export initial_condition_poisson_nonperiodic, source_terms_poisson_nonperiodic,
-       boundary_condition_poisson_nonperiodic
-export initial_condition_eoc_test_coupled_euler_gravity,
-       source_terms_eoc_test_coupled_euler_gravity, source_terms_eoc_test_euler
-
-export cons2cons, cons2prim, prim2cons, cons2macroscopic, cons2state, cons2mean,
-       cons2entropy, entropy2cons
 export density, pressure, density_pressure, velocity, global_mean_vars,
-       equilibrium_distribution, waterheight_pressure
+       equilibrium_distribution, waterheight_pressure, alpha_rho
 export entropy, energy_total, energy_kinetic, energy_internal, energy_magnetic,
        cross_helicity,
->>>>>>> 3303ed8c0b8af262a16e96f2ad6dcd84034bbe7b
        enstrophy
 export lake_at_rest_error, water_at_rest_error
 export ncomponents, eachcomponent
