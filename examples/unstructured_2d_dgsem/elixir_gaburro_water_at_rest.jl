@@ -3,6 +3,7 @@ using Revise
 using Trixi
 using Plots
 using Printf
+using LinearAlgebra
 
 equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
 
@@ -12,8 +13,9 @@ function initial_condition_rest(x, t, equations::Gaburro2D)
     v1 = 0.0
     v2 = 0.0
     alpha = 1.0
+    phi = x[2]
     
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
+    return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
   
 initial_condition = initial_condition_rest
@@ -26,38 +28,39 @@ boundary_condition = Dict( :Bottom  => boundary_condition_wall,
 ###############################################################################
 # Get the DG approximation space
 
-volume_flux = (flux_central, flux_nonconservative_gaburro)
-surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
+volume_flux = (flux_central, flux_nonconservative_gaburro_well)
+surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro_well)
 
-#solver = DGSEM(polydeg=3, surface_flux=surface_flux,
- #                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
+solver = DGSEM(polydeg=3, surface_flux=surface_flux,
+                 volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
-basis = LobattoLegendreBasis(3)
-indicator_sc = IndicatorHennemannGassner(equations, basis,
-                                         alpha_max=1.0,
-                                         alpha_min=0.001,
-                                         alpha_smooth=true,
-                                         variable=alpha_rho)
-volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
-                                                 volume_flux_dg=volume_flux,
-                                                 volume_flux_fv=surface_flux)
-solver = DGSEM(basis, surface_flux, volume_integral)
+#basis = LobattoLegendreBasis(3)
+#indicator_sc = IndicatorHennemannGassner(equations, basis,
+ #                                        alpha_max=1.0,
+  #                                       alpha_min=0.001,
+   #                                      alpha_smooth=true,
+    #                                     variable=alpha_rho)
+#volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
+ #                                                volume_flux_dg=volume_flux,
+  #                                               volume_flux_fv=surface_flux)
+#solver = DGSEM(basis, surface_flux, volume_integral)
 
 ###############################################################################
 # Get the unstructured quad mesh from a file 
 # create the unstructured mesh from your mesh file
-mesh_file = joinpath("out", "tank_water_at_rest.mesh")
+mesh_file = joinpath("out", "tank_water_at_rest.inp")
 
-mesh = UnstructuredMesh2D(mesh_file, periodicity=false)
+#mesh = UnstructuredMesh2D(mesh_file, periodicity=false)
+mesh = P4estMesh{2}(mesh_file, polydeg=1, initial_refinement_level=1)#, periodicity=false)
 
 # Create the semi discretization object
-semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver,
-                                    source_terms = source_terms_well_balanced, boundary_conditions=boundary_condition)
+semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, #source_terms = source_terms_gravity,
+                                    boundary_conditions=boundary_condition)
 
 ###############################################################################
 # ODE solvers, callbacks, etc.
 
-tspan = (0.0, 0.1)
+tspan = (0.0, 10.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
@@ -66,10 +69,10 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=1.4)
+stepsize_callback = StepsizeCallback(cfl=1.2)
 
 function save_my_plot_density(plot_data, variable_names;
-                              show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
+                              show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
                               time=nothing, timestep=nothing)
     
     alpha_rho_data = plot_data["alpha_rho"]
@@ -82,14 +85,14 @@ function save_my_plot_density(plot_data, variable_names;
                dpi=300,
                )
   
-    #Plots.plot!(getmesh(plot_data),linewidth=0.4)
+    Plots.plot!(getmesh(plot_data),linewidth=0.4)
   
     # Determine filename and save plot
     filename = joinpath("out", @sprintf("solution_%06d.png", timestep))
     Plots.savefig(filename)
 end
 
-visualization_callback = VisualizationCallback(; interval=500,
+visualization_callback = VisualizationCallback(; interval=10000,
                             solution_variables=cons2cons,
                             #variable_names=["rho"],
                             show_mesh=false,
@@ -97,12 +100,51 @@ visualization_callback = VisualizationCallback(; interval=500,
                             plot_creator=save_my_plot_density,
                             )
 
+analysis_callback = AnalysisCallback(semi, interval=1000,
+                                     extra_analysis_integrals=(water_at_rest_error,));
+                                     
 callbacks = CallbackSet(stepsize_callback, alive_callback, visualization_callback)
 
 ###############################################################################
 # run the simulation
 
-sol = solve(ode, CarpenterKennedy2N54( williamson_condition=false),
+sol = solve(ode, CarpenterKennedy2N54( williamson_condition=false), maxiters=1e7,
             dt=1.0, # solve needs some value here but it will be overwritten by the stepsize_callback
             save_everystep=false, callback=callbacks);
 summary_callback() # print the timer summary
+
+deg = 3
+# Gitter 8x8
+sol_all_var = sol[2]
+sol_all_var_0 = sol[1]
+
+rho_vec = zeros((deg + 1)^2 * 8 * 8)
+rho0_vec = zeros((deg + 1)^2 * 8 * 8)
+
+v1_vec = zeros((deg + 1)^2 * 8 * 8)
+v1_0_vec = zeros((deg + 1)^2 * 8 * 8)
+
+v2_vec = zeros((deg + 1)^2 * 8 * 8)
+v2_0_vec = zeros((deg + 1)^2 * 8 * 8)
+
+a_vec = zeros((deg + 1)^2 * 8 * 8)
+a_0_vec = zeros((deg + 1)^2 * 8 * 8)
+
+for i = 1:((deg + 1)^2 * 8 * 8)
+    rho_vec[i] = sol_all_var[(i-1)*5 + 1]/sol_all_var[(i-1)*5 + 4]
+    rho0_vec[i] = sol_all_var_0[(i-1)*5 + 1]/sol_all_var_0[(i-1)*5 + 4]
+    
+    v1_vec[i] = sol_all_var[(i-1)*5 + 2]/sol_all_var[(i-1)*5 + 1]
+    v1_0_vec[i] = sol_all_var_0[(i-1)*5 + 2]/sol_all_var_0[(i-1)*5 + 1]
+    
+    v2_vec[i] = sol_all_var[(i-1)*5 + 3]/sol_all_var[(i-1)*5 + 1]
+    v2_0_vec[i] = sol_all_var_0[(i-1)*5 + 3]/sol_all_var_0[(i-1)*5 + 1]
+    
+    a_vec[i] = sol_all_var[(i-1)*5 + 4]
+    a_0_vec[i] = sol_all_var_0[(i-1)*5 + 4]
+end
+
+println("Fehler über erste Variable:  ", norm((rho0_vec - rho_vec),Inf))
+println("Fehler über zweite Variable:  ", norm((v1_0_vec - v1_vec),Inf))
+println("Fehler über dritte Variable:  ", norm((v2_0_vec - v2_vec),Inf))
+println("Fehler über vierte Variable:  ", norm((a_0_vec - a_vec),Inf))

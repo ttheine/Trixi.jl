@@ -20,8 +20,9 @@ function initial_condition_test(x, t, equations::Gaburro2D)
         v2 = 0.0
         alpha = 10^(-3)
     end
+    phi = x[2]
     
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
+    return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
 initial_condition = initial_condition_test
@@ -51,7 +52,7 @@ coordinates_max = ( 3.0,  3.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=7,
+                initial_refinement_level=9,
                 n_cells_max=400_000)
 
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver)
@@ -65,7 +66,7 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=0.1)
+stepsize_callback = StepsizeCallback(cfl=0.4)
 
 function save_my_plot(plot_data, variable_names;
     show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
@@ -98,10 +99,10 @@ function save_my_plot_density(plot_data, variable_names;
     
     alpha_rho_data = plot_data["alpha_rho"]
   
-    title = @sprintf("alpha_rho | 4th order DG | t = %3.2f", time)
+    title = @sprintf("alpha_rho | 4th order DG | t = %3.4f", time)
     
     Plots.plot(alpha_rho_data, 
-               clim=(0.0,1200.0), 
+               clim=(0.0,1000.0), 
                title=title,titlefontsize=9, 
                dpi=300,
                )
@@ -109,7 +110,7 @@ function save_my_plot_density(plot_data, variable_names;
     #Plots.plot!(getmesh(plot_data),linewidth=0.4)
   
     # Determine filename and save plot
-    filename = joinpath("out", @sprintf("solution_%06d.png", timestep))
+    filename = joinpath("out", @sprintf("elliptical_drop_%06d.png", timestep))
     Plots.savefig(filename)
 end
 

@@ -369,8 +369,8 @@ abstract type AbstractAcousticPerturbationEquations{NDIMS, NVARS} <: AbstractEqu
 include("acoustic_perturbation_2d.jl")
 
 abstract type AbstractGaburroEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end
-include("gaburro_1d.jl")
 include("gaburro_2d.jl")
+include("gaburro_3d.jl")
 
 # Linearized Euler equations
 abstract type AbstractLinearizedEulerEquations{NDIMS, NVARS} <: AbstractEquations{NDIMS, NVARS} end

@@ -1,7 +1,8 @@
+using OrdinaryDiffEq
+using Revise
 using Trixi
 using Plots
 using Printf
-using OrdinaryDiffEq
 
 equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
 
@@ -19,8 +20,9 @@ function initial_condition_const(x, t, equations::Gaburro2D)
         v2 = 0.0
         alpha = 10^-3
     end
+    phi = x[2]
     
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
+    return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
 function initial_condition_line(x, t, equations::Gaburro2D)
@@ -36,8 +38,9 @@ function initial_condition_line(x, t, equations::Gaburro2D)
       v2 = 0.0
       alpha = 10^-3
   end
+  phi = x[2]
   
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
+  return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
 function initial_condition_exp(x, t, equations::Gaburro2D)
@@ -53,8 +56,9 @@ function initial_condition_exp(x, t, equations::Gaburro2D)
       v2 = 0.0
       alpha = 10^-3
   end
+  phi = x[2]
   
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
+  return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
 function initial_condition_sin(x, t, equations::Gaburro2D)
@@ -70,8 +74,9 @@ function initial_condition_sin(x, t, equations::Gaburro2D)
       v2 = 0.0
       alpha = 10^-3
   end
+  phi = x[2]
   
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
+  return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
   
 initial_condition = initial_condition_line
@@ -100,13 +105,13 @@ coordinates_max = ( 0.5, 1.0) # maximum coordinates (max(x), max(y))
 
 # Create a uniformly refined mesh with periodic boundaries
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=7,
+                initial_refinement_level=5,
                 n_cells_max=100_000, periodicity=(false,false))
 
-semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
-                source_terms=source_terms_gravity, boundary_conditions=boundary_conditions)
+semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, #source_terms=source_terms_gravity,
+                                    boundary_conditions=boundary_conditions)
 
-tspan = (0.0, 1.5)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 #amr_indicator = IndicatorHennemannGassner(semi,

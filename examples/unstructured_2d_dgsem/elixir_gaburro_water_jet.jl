@@ -68,7 +68,7 @@ stepsize_callback = StepsizeCallback(cfl=1.2)
 
 
 function save_my_plot_density(plot_data, variable_names;
-  show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
+  show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
   time=nothing, timestep=nothing)
   
   alpha_rho_data = plot_data["alpha_rho"]
@@ -82,7 +82,7 @@ function save_my_plot_density(plot_data, variable_names;
              dpi=300,
              )
 
-  Plots.plot!(getmesh(plot_data),linewidth=0.4)
+  #Plots.plot!(getmesh(plot_data),linewidth=0.4)
 
   # Determine filename and save plot
   filename = joinpath("out", @sprintf("solution_%06d.png", timestep))

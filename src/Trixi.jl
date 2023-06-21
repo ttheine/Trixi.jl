@@ -134,7 +134,7 @@ export AcousticPerturbationEquations2D,
        InviscidBurgersEquation1D,
        LatticeBoltzmannEquations2D, LatticeBoltzmannEquations3D,
        ShallowWaterEquations1D, ShallowWaterEquations2D,
-       Gaburro2D, Gaburro1D,
+       Gaburro2D, Gaburro3D,
        LinearizedEulerEquations2D
 
 export LaplaceDiffusion2D,
@@ -156,7 +156,7 @@ export flux, flux_central, flux_lax_friedrichs, flux_hll, flux_hllc, flux_hlle, 
        FluxRotated,
        flux_shima_etal_turbo, flux_ranocha_turbo,
        FluxHydrostaticReconstruction,
-       flux_nonconservative_gaburro,
+       flux_nonconservative_gaburro, flux_nonconservative_gaburro_well,
        FluxUpwind
 
 export splitting_steger_warming, splitting_vanleer_haenel,
@@ -180,14 +180,14 @@ export initial_condition_convergence_test, source_terms_convergence_test
 export source_terms_harmonic
 export initial_condition_poisson_nonperiodic, source_terms_poisson_nonperiodic, boundary_condition_poisson_nonperiodic
 export initial_condition_eoc_test_coupled_euler_gravity, source_terms_eoc_test_coupled_euler_gravity, source_terms_eoc_test_euler
-export source_terms_gravity, source_terms_well_balanced
+export source_terms_gravity
 
 export cons2cons, cons2prim, prim2cons, cons2macroscopic, cons2state, cons2mean,
        cons2entropy, entropy2cons
 export density, pressure, density_pressure, velocity, global_mean_vars, equilibrium_distribution, waterheight_pressure, alpha_rho
 export entropy, energy_total, energy_kinetic, energy_internal, energy_magnetic, cross_helicity,
        enstrophy
-export lake_at_rest_error
+export lake_at_rest_error, water_at_rest_error
 export ncomponents, eachcomponent
 
 export TreeMesh, StructuredMesh, UnstructuredMesh2D, P4estMesh

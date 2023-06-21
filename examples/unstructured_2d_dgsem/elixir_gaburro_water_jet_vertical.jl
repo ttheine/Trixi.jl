@@ -55,12 +55,12 @@ mesh = UnstructuredMesh2D(mesh_file)
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
                 source_terms=source_terms_gravity, boundary_conditions=boundary_condition)
 
-tspan = (0.0, 4.0)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
 
-analysis_interval = 100
+analysis_interval = 500
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
@@ -68,7 +68,7 @@ stepsize_callback = StepsizeCallback(cfl=1.4)
 
 
 function save_my_plot_density(plot_data, variable_names;
-  show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
+  show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
   time=nothing, timestep=nothing)
   
   alpha_rho_data = plot_data["alpha_rho"]
@@ -82,7 +82,7 @@ function save_my_plot_density(plot_data, variable_names;
              dpi=300,
              )
 
-  Plots.plot!(getmesh(plot_data),linewidth=0.4)
+  #Plots.plot!(getmesh(plot_data),linewidth=0.4)
 
   # Determine filename and save plot
   filename = joinpath("out", @sprintf("solution_%06d.png", timestep))

@@ -20,8 +20,9 @@ function initial_condition_elliptic(x, t, equations::Gaburro2D)
         v2 = 0.0
         alpha = 10^(-3)
     end
+    phi = 0.0
     
-    return prim2cons(SVector(rho, v1, v2, alpha), equations)
+    return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
 initial_condition = initial_condition_elliptic
