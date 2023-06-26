@@ -3,7 +3,7 @@ using Plots
 using Printf
 using OrdinaryDiffEq
 
-equations = Gaburro2D(1.0, 6.37*10^5, 1000.0, 9.81)
+equations = Gaburro2D(1.0, 6.54*10^5, 1000.0, 9.81)
 
 function initial_condition_dry_bed(x, t, equations::Gaburro2D)
   if((x[1] <= 0.0) && (x[2] <= 1.4618))
@@ -12,11 +12,11 @@ function initial_condition_dry_bed(x, t, equations::Gaburro2D)
       v1 = 0.0
       v2 = 0.0
       alpha = 1.0 - 10^-3
-  elseif(x[1] > 0.0) && (x[2] <= 0.501)
+  elseif((x[1] > 0.0) && (x[2] <= 0.201))
       rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.201))
       v1 = 0.0
       v2 = 0.0
-      alpha = 10^-3
+      alpha = 1.0 - 10^-3
   else
       rho = 1000.0
       v1 = 0.0
@@ -28,9 +28,14 @@ function initial_condition_dry_bed(x, t, equations::Gaburro2D)
 end
 
 function initial_condition_wet_bed(x, t, equations::Gaburro2D)
-  if(((x[1] <= 0.0) && (x[2] <= 1.5)) || ((x[1] >= 0.0) && (x[2] <= 0.75)))
+  if((x[1] <= 0.0) && (x[2] <= 1.4618))
       # liquid domain
-      rho = 1000.0
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.4618))
+      v1 = 0.0
+      v2 = 0.0
+      alpha = 1.0 - 10^-3
+  elseif((x[1] >= 0.0) && (x[2] <= 0.50873))
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.50873))
       v1 = 0.0
       v2 = 0.0
       alpha = 1.0 - 10^-3
@@ -44,7 +49,7 @@ function initial_condition_wet_bed(x, t, equations::Gaburro2D)
   return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
   
-initial_condition = initial_condition_dry_bed
+initial_condition = initial_condition_wet_bed
 
 boundary_condition = Dict( :Bottom   => boundary_condition_wall,
                            :StepLeft => boundary_condition_wall,
@@ -77,7 +82,7 @@ mesh = UnstructuredMesh2D(mesh_file)
 semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, #source_terms=source_terms_gravity,
                                     boundary_conditions=boundary_condition)
 
-tspan = (0.0, 0.5)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()

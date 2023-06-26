@@ -30,7 +30,7 @@ function initial_condition_dambreak(x, t, equations)
     return prim2cons(SVector(H, v, b), equations)
 end
 
-function initial_condition_dry_bed_step(x, t, equations)
+function initial_condition_step(x, t, equations)
 
     if(x[1] <= 0.0)
       # liquid domain
@@ -38,7 +38,7 @@ function initial_condition_dry_bed_step(x, t, equations)
       h = 1.4618
       b = 0.0
     else
-      h = 0.001
+      h = 0.30873
       b = 0.2
     end
     
@@ -67,7 +67,7 @@ function initial_condition_dry_bed(x, t, equations)
     return prim2cons(SVector(H, v, b), equations)
 end
 
-initial_condition = initial_condition_dry_bed_step
+initial_condition = initial_condition_step
 
 boundary_condition = boundary_condition_slip_wall
 
@@ -84,7 +84,7 @@ surface_flux = (FluxHydrostaticReconstruction(flux_lax_friedrichs, hydrostatic_r
 basis = LobattoLegendreBasis(3)
 
 indicator_sc = IndicatorHennemannGassner(equations, basis,
-                                         alpha_max=0.5,
+                                         alpha_max=1.0,
                                          alpha_min=0.001,
                                          alpha_smooth=true,
                                          variable=waterheight_pressure)
@@ -110,7 +110,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
 ###############################################################################
 # ODE solver
 
-tspan = (0.0, 0.5)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 
