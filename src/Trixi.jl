@@ -149,12 +149,9 @@ export AcousticPerturbationEquations2D,
        LatticeBoltzmannEquations2D, LatticeBoltzmannEquations3D,
        ShallowWaterEquations1D, ShallowWaterEquations2D,
        ShallowWaterTwoLayerEquations1D, ShallowWaterTwoLayerEquations2D,
-<<<<<<< HEAD
-       Gaburro2D, Gaburro3D,
-=======
        ShallowWaterEquationsQuasi1D,
->>>>>>> a64004d98c7a1b0c4894663c176f21c2178a3630
-       LinearizedEulerEquations2D
+       LinearizedEulerEquations2D,
+       Gaburro2D, Gaburro3D,
 
 export LaplaceDiffusion1D, LaplaceDiffusion2D,
        CompressibleNavierStokesDiffusion1D, CompressibleNavierStokesDiffusion2D,
