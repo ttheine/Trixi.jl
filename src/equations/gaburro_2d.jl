@@ -47,7 +47,7 @@ end
 function source_terms_gravity(u, x, t, equations::Gaburro2D)
   alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
   du1 = 0.0
-  du2 = 0.0
+  du2 = -alpha_rho * 5.0
   du3 = -alpha_rho * equations.gravity
   du4 = 0.0
   du5 = 0.0

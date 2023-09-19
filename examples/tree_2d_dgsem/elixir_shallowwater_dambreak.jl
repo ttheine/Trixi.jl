@@ -9,17 +9,9 @@ function initial_condition_dambreak(x, t, equations)
 
     if(x[1] <= 0.0)
       # liquid domain
-      #h = 0.375
       h = 1.5
-      if(-0.5236 <= x[1] <= 0.5236)
-        h = 1.125 + 0.375 * sin(3*x[1] + pi)
-      end
     else
       h = 0.75
-      if(-0.5236 <= x[1] <= 0.5236)
-        h = 1.125 + 0.375 * sin(3*x[1] + pi)
-      end
-      #h = 0.1875
     end
     
     b = 0.0
@@ -67,7 +59,7 @@ function initial_condition_dry_bed(x, t, equations)
     return prim2cons(SVector(H, v, b), equations)
 end
 
-initial_condition = initial_condition_step
+initial_condition = initial_condition_dambreak
 
 boundary_condition = boundary_condition_slip_wall
 
@@ -101,7 +93,7 @@ solver = DGSEM(basis, surface_flux, volume_integral)
 coordinates_min = -5
 coordinates_max = 5
 mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=7,
+                initial_refinement_level=8,
                 n_cells_max=100_000, periodicity=false)
 
 # Create the semi discretization object

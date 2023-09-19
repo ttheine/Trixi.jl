@@ -26,7 +26,7 @@ end
 
 have_nonconservative_terms(::Gaburro3D) = True()
 varnames(::typeof(cons2cons), ::Gaburro3D) = ("alpha_rho", "alpha_rho_v1", "alpha_rho_v2", "alpha_rho_v3", "alpha", "phi")
-varnames(::typeof(cons2prim), ::Gaburro3D) = ("rho", "v1", "v2","v3", "alpha", "phi")
+varnames(::typeof(cons2prim), ::Gaburro3D) = ("rho", "v1", "v2", "v3", "alpha", "phi")
 
 
 # Set initial conditions at physical location `x` for time `t`
@@ -46,11 +46,11 @@ function initial_condition_constant(x, t, equations::Gaburro3D)
 end
 
 function source_terms_gravity(u, x, t, equations::Gaburro3D)
-  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha = u
+  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha_rho_v3, alpha, phi = u
   du1 = 0.0
   du2 = 0.0
-  du3 = -alpha_rho * equations.gravity
-  du4 = 0.0
+  du3 = 0.0
+  du4 = -alpha_rho * equations.gravity
   du5 = 0.0
   du6 = 0.0
 
@@ -221,9 +221,9 @@ end
   if orientation == 1
     f = SVector(z, z, z, z, v1_ll * alpha_rr, z)
   elseif orientation == 2
-    f = SVector(z, z, -well_balanced, z, v2_ll * alpha_rr, z)
+    f = SVector(z, z, z, z, v2_ll * alpha_rr, z)
   else
-    f = SVector(z, z, z, z, v3_ll * alpha_rr, z)
+    f = SVector(z, z, z, -well_balanced, v3_ll * alpha_rr, z)
   end
       
   return f
@@ -238,18 +238,18 @@ end
   v1_ll = u_ll[2]/u_ll[1]
   v2_ll = u_ll[3]/u_ll[1]
   v3_ll = u_ll[4]/u_ll[1]
-  alpha_rr = u_rr[5] #* normal_direction_average[1] + u_rr[4] * normal_direction_average[2]
+  alpha_rr = u_rr[5]
   phi_ll = u_ll[6]
   phi_rr = u_rr[6]
 
   v_dot_n_ll = v1_ll * normal_direction_ll[1] + v2_ll * normal_direction_ll[2] + v3_ll * normal_direction_ll[3]
   
   well_balanced = u_ll[1]/equations.rho_0 * equations.k0 * exp(equations.rho_0 * equations.gravity * phi_ll/equations.k0) * exp(-equations.rho_0 * equations.gravity * phi_rr/equations.k0) * normal_direction_average[2]
-  gravity = u_ll[1] * equations.gravity * u_rr[5] * normal_direction_average[2]
+  gravity = u_ll[1] * equations.gravity * u_rr[5] * normal_direction_average[3]
   
   z = zero(eltype(u_ll))
 
-  f = SVector(z, z, -well_balanced, z, v_dot_n_ll * alpha_rr, z)
+  f = SVector(z, z, z, -well_balanced, v_dot_n_ll * alpha_rr, z)
 
   return f
 
@@ -404,11 +404,5 @@ end
   return rho_times_p
 end
 
-# Calculate the error for the "water-at-rest" test case 
-@inline function water_at_rest_error(u, equations::Gaburro3D)
-  alpha_rho, alpha_rho_v1, alpha_rho_v2, alpha_rho_v3, alpha, phi = u
-  rho0 = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) * (phi - 1.0))
-  return abs(alpha_rho/alpha - rho0)
-end
 
 end # @muladd  

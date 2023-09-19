@@ -3,7 +3,7 @@ using Plots
 using Printf
 using OrdinaryDiffEq
 
-equations = Gaburro2D(1.0, 6.54*10^5, 1000.0, 9.81)
+equations = Gaburro2D(1.0, 6.37*10^5, 1000.0, 9.81)
 
 function initial_condition_dry_bed(x, t, equations::Gaburro2D)
   if((x[1] <= 0.0) && (x[2] <= 1.4618))
@@ -91,7 +91,7 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=1.2)
+stepsize_callback = StepsizeCallback(cfl=0.8)
 
 function save_my_plot_density(plot_data, variable_names;
   show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
@@ -99,12 +99,13 @@ function save_my_plot_density(plot_data, variable_names;
   
   alpha_rho_data = plot_data["alpha_rho"]
 
-  title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
+  #title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
+  title = @sprintf(" ")
   
   Plots.plot(alpha_rho_data, 
              clim=(0.0,1000.0), 
              #colorbar_title="\ndensity",
-             c=:Blues,
+             c=:jet1,
              title=title,titlefontsize=9, 
              dpi=300,
              )

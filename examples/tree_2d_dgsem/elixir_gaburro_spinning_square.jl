@@ -76,10 +76,6 @@ function save_my_plot(plot_data, variable_names;
     push!(plots, Plots.plot(getmesh(plot_data); plot_arguments...))
   end
 
-  #pressure_matrix = equations.k0 .* plot_data.data[1]
-  #pressure_matrix = pressure_matrix .- equations.k0
-  #push!(plots, Plots.plot(heatmap(plot_data.x, plot_data.y, pressure_matrix), title = "pressure", width=10, height=10))
-
   # Create plot
   Plots.plot(plots...,)
 

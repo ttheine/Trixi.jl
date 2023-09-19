@@ -107,38 +107,3 @@ sol = solve(ode, CarpenterKennedy2N54( williamson_condition=false), maxiters=1e7
             dt=1.0, # solve needs some value here but it will be overwritten by the stepsize_callback
             save_everystep=false, callback=callbacks);
 summary_callback() # print the timer summary
-
-
-sol_all_var = sol[2]
-sol_all_var_0 = sol[1]
-
-rho_vec = zeros((deg + 1)^2 * 8 * 8)
-rho0_vec = zeros((deg + 1)^2 * 8 * 8)
-
-v1_vec = zeros((deg + 1)^2 * 8 * 8)
-v1_0_vec = zeros((deg + 1)^2 * 8 * 8)
-
-v2_vec = zeros((deg + 1)^2 * 8 * 8)
-v2_0_vec = zeros((deg + 1)^2 * 8 * 8)
-
-a_vec = zeros((deg + 1)^2 * 8 * 8)
-a_0_vec = zeros((deg + 1)^2 * 8 * 8)
-
-for i = 1:((deg + 1)^2 * 8 * 8)
-    rho_vec[i] = sol_all_var[(i-1)*5 + 1]#/sol_all_var[(i-1)*5 + 4]
-    rho0_vec[i] = sol_all_var_0[(i-1)*5 + 1]#/sol_all_var_0[(i-1)*5 + 4]
-    
-    v1_vec[i] = sol_all_var[(i-1)*5 + 2]#/sol_all_var[(i-1)*5 + 1]
-    v1_0_vec[i] = sol_all_var_0[(i-1)*5 + 2]#/sol_all_var_0[(i-1)*5 + 1]
-    
-    v2_vec[i] = sol_all_var[(i-1)*5 + 3]#/sol_all_var[(i-1)*5 + 1]
-    v2_0_vec[i] = sol_all_var_0[(i-1)*5 + 3]#/sol_all_var_0[(i-1)*5 + 1]
-    
-    a_vec[i] = sol_all_var[(i-1)*5 + 4]
-    a_0_vec[i] = sol_all_var_0[(i-1)*5 + 4]
-end
-
-println("Fehler über erste Variable:  ", norm((rho0_vec - rho_vec),Inf))
-println("Fehler über zweite Variable:  ", norm((v1_0_vec - v1_vec),Inf))
-println("Fehler über dritte Variable:  ", norm((v2_0_vec - v2_vec),Inf))
-println("Fehler über vierte Variable:  ", norm((a_0_vec - a_vec),Inf))

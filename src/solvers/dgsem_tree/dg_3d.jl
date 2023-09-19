@@ -804,7 +804,8 @@ function calc_boundary_flux_by_direction!(surface_flux_values::AbstractArray{<:A
                                           boundary_condition, equations,
                                           surface_integral, dg::DG, cache,
                                           direction, first_boundary, last_boundary)
-    @unpack surface_flux = surface_integral
+    #@unpack surface_flux = surface_integral
+    surface_flux, nonconservative_flux = surface_integral.surface_flux
     @unpack u, neighbor_ids, neighbor_sides, node_coordinates, orientations = cache.boundaries
 
     @threaded for boundary in first_boundary:last_boundary
@@ -823,10 +824,12 @@ function calc_boundary_flux_by_direction!(surface_flux_values::AbstractArray{<:A
             flux = boundary_condition(u_inner, orientations[boundary], direction, x, t,
                                       surface_flux,
                                       equations)
+            noncons_flux = boundary_condition(u_inner, orientations[boundary],
+                                              direction, x, t, nonconservative_flux, equations)
 
             # Copy flux to left and right element storage
             for v in eachvariable(equations)
-                surface_flux_values[v, i, j, direction, neighbor] = flux[v]
+                surface_flux_values[v, i, j, direction, neighbor] = flux[v] + 0.5 * noncons_flux[v]
             end
         end
     end
