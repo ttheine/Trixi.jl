@@ -3,14 +3,19 @@ using Plots
 using Printf
 using OrdinaryDiffEq
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 0.0)
+equations = ThreeEquationModel2D(1.0, 6.37*10^5, 1000.0, 9.81)
 
-function initial_condition_water_jet(x, t, equations::Gaburro2D)
-  if((x[2] - 1.6*x[1] <= 0.0) && (x[2] - 1.6 * x[1] >= -1.6))
+function initial_condition_dry_bed(x, t, equations::ThreeEquationModel2D)
+  if((x[1] <= 0.0) && (x[2] <= 1.4618))
       # liquid domain
-      rho = 1000.0
-      v1 = 5 * -0.52999894
-      v2 = 5 * -0.847998304
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.4618))
+      v1 = 0.0
+      v2 = 0.0
+      alpha = 1.0 - 10^-3
+  elseif((x[1] > 0.0) && (x[2] <= 0.201))
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.201))
+      v1 = 0.0
+      v2 = 0.0
       alpha = 1.0 - 10^-3
   else
       rho = 1000.0
@@ -18,16 +23,21 @@ function initial_condition_water_jet(x, t, equations::Gaburro2D)
       v2 = 0.0
       alpha = 10^-3
   end
-  
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
+  phi = x[2]
+  return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
-function initial_condition_water_jet_vertical(x, t, equations::Gaburro2D)
-  if(-0.5 <= x[1] <= 0.5)
+function initial_condition_wet_bed(x, t, equations::ThreeEquationModel2D)
+  if((x[1] <= 0.0) && (x[2] <= 1.4618))
       # liquid domain
-      rho = 1000.0
-      v1 = 5 * -0.0
-      v2 = 5 * -1.0
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.4618))
+      v1 = 0.0
+      v2 = 0.0
+      alpha = 1.0 - 10^-3
+  elseif((x[1] >= 0.0) && (x[2] <= 0.50873))
+      rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.50873))
+      v1 = 0.0
+      v2 = 0.0
       alpha = 1.0 - 10^-3
   else
       rho = 1000.0
@@ -35,19 +45,21 @@ function initial_condition_water_jet_vertical(x, t, equations::Gaburro2D)
       v2 = 0.0
       alpha = 10^-3
   end
-  
-  return prim2cons(SVector(rho, v1, v2, alpha), equations)
+  phi = x[2]
+  return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
-
-initial_condition = initial_condition_water_jet_vertical
-
-boundary_conditions = (x_neg=boundary_condition_wall,
-                       x_pos=boundary_condition_wall,
-                       y_neg=boundary_condition_wall,
-                       y_pos=BoundaryConditionDirichlet(initial_condition),)
   
-volume_flux = (flux_central, flux_nonconservative_gaburro)
-surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
+initial_condition = initial_condition_wet_bed
+
+boundary_condition = Dict( :Bottom   => boundary_condition_wall,
+                           :StepLeft => boundary_condition_wall,
+                           :StepTop  => boundary_condition_wall,
+                           :Right    => boundary_condition_wall,
+                           :Top      => boundary_condition_wall,
+                           :Left     => boundary_condition_wall);
+  
+volume_flux = (flux_central, flux_nonconservative_gaburro_well)
+surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro_well)
 
 basis = LobattoLegendreBasis(3)
 indicator_sc = IndicatorHennemannGassner(equations, basis,
@@ -60,18 +72,17 @@ volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
                                                   volume_flux_fv=surface_flux)
 solver = DGSEM(basis, surface_flux, volume_integral)
 
-coordinates_min = (-5.0, 0.0) # minimum coordinates (min(x), min(y))
-coordinates_max = ( 5.0, 10.0) # maximum coordinates (max(x), max(y))
+###############################################################################
+# Get the unstructured quad mesh from a file 
+# create the unstructured mesh from your mesh file
+mesh_file = joinpath("out", "tank_step_small.mesh")
 
-# Create a uniformly refined mesh with periodic boundaries
-mesh = TreeMesh(coordinates_min, coordinates_max,
-                initial_refinement_level=8,
-                n_cells_max=100_000, periodicity=(false,false))
+mesh = UnstructuredMesh2D(mesh_file)
 
-semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, 
-                source_terms=source_terms_gravity, boundary_conditions=boundary_conditions)
+semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver, #source_terms=source_terms_gravity,
+                                    boundary_conditions=boundary_condition)
 
-tspan = (0.0, 3.5)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
@@ -82,18 +93,19 @@ alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
 stepsize_callback = StepsizeCallback(cfl=0.8)
 
-
 function save_my_plot_density(plot_data, variable_names;
-  show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
+  show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
   time=nothing, timestep=nothing)
   
   alpha_rho_data = plot_data["alpha_rho"]
 
-  title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
+  #title = @sprintf("alpha_rho | 4th-order DG | t = %3.2f", time)
+  title = @sprintf(" ")
   
   Plots.plot(alpha_rho_data, 
              clim=(0.0,1000.0), 
              #colorbar_title="\ndensity",
+             c=:jet1,
              title=title,titlefontsize=9, 
              dpi=300,
              )
@@ -108,7 +120,7 @@ end
 visualization_callback = VisualizationCallback(; interval=500,
                           solution_variables=cons2cons,
                           #variable_names=["rho"],
-                          show_mesh=false,
+                          show_mesh=true,
                           #plot_data_creator=PlotData2D,
                           plot_creator=save_my_plot_density,
                           )

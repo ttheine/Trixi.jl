@@ -3,9 +3,9 @@ using Trixi
 using Printf
 
 
-equations = Gaburro2D(1.0, 8.78*10^5, 1000, 0.0)
+equations = ThreeEquationModel2D(1.0, 8.78*10^5, 1000, 0.0)
 
-function initial_condition_square(x, t, equations::Gaburro2D)
+function initial_condition_square(x, t, equations::ThreeEquationModel2D)
   
     # liquid domain
     if((abs(x[1]) <= 1) & (abs(x[2]) <= 1))

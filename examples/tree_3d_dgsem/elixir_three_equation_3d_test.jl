@@ -4,10 +4,10 @@ using Trixi
 using Plots
 using Printf
 
-equations = Gaburro3D(1.0, 2.62*10^5, 1000.0, 9.81)
+equations = ThreeEquationModel3D(1.0, 2.62*10^5, 1000.0, 9.81)
 
 
-function initial_condition_gauss_bell(x, t, equations::Gaburro3D)
+function initial_condition_gauss_bell(x, t, equations::ThreeEquationModel3D)
     
     if((exp(-x[1]^2 - x[2]^2) >= x[3]))
         # liquid domain   
@@ -27,7 +27,7 @@ function initial_condition_gauss_bell(x, t, equations::Gaburro3D)
     return prim2cons(SVector(rho, v1, v2, v3, alpha, phi), equations)
 end
 
-function initial_condition_drop(x, t, equations::Gaburro3D)
+function initial_condition_drop(x, t, equations::ThreeEquationModel3D)
     
     if(x[3] <= 0.25)
         # liquid domain   
@@ -54,7 +54,7 @@ function initial_condition_drop(x, t, equations::Gaburro3D)
     return prim2cons(SVector(rho, v1, v2, v3, alpha, phi), equations)
 end
 
-function initial_condition_dambreak(x, t, equations::Gaburro3D)
+function initial_condition_dambreak(x, t, equations::ThreeEquationModel3D)
     
     if((x[3] <= 1.5) && (x[2] <= 0))
         # liquid domain   
@@ -81,7 +81,7 @@ function initial_condition_dambreak(x, t, equations::Gaburro3D)
     return prim2cons(SVector(rho, v1, v2, v3, alpha, phi), equations)
 end
 
-function initial_condition_dambreak_wall(x, t, equations::Gaburro3D)
+function initial_condition_dambreak_wall(x, t, equations::ThreeEquationModel3D)
     
     if((x[3] <= 0.6) && (x[2] <= 1.2))
         # liquid domain   

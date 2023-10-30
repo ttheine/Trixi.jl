@@ -151,7 +151,7 @@ export AcousticPerturbationEquations2D,
        ShallowWaterTwoLayerEquations1D, ShallowWaterTwoLayerEquations2D,
        ShallowWaterEquationsQuasi1D,
        LinearizedEulerEquations2D,
-       Gaburro2D, Gaburro3D,
+       ThreeEquationModel2D, ThreeEquationModel3D
 
 export LaplaceDiffusion1D, LaplaceDiffusion2D,
        CompressibleNavierStokesDiffusion1D, CompressibleNavierStokesDiffusion2D,

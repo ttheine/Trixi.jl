@@ -6,9 +6,9 @@ using Printf
 using LinearAlgebra
 
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
+equations = ThreeEquationModel2D(1.0, 2.78*10^5, 1000.0, 9.81)
 
-function initial_condition_rest(x, t, equations::Gaburro2D)
+function initial_condition_rest(x, t, equations::ThreeEquationModel2D)
     # liquid domain
     rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.0))
     v1 = 0.0
@@ -26,10 +26,10 @@ boundary_conditions = (x_neg=boundary_condition_wall,
                        y_neg=boundary_condition_wall,
                        y_pos=boundary_condition_wall,)
   
-volume_flux = (flux_central, flux_nonconservative_gaburro_well)
-surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro_well)
+volume_flux = (flux_central, flux_nonconservative_gaburro)
+surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro)
 
-solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro_well),
+solver = DGSEM(polydeg=3, surface_flux=(flux_lax_friedrichs, flux_nonconservative_gaburro),
                  volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 basis = LobattoLegendreBasis(3)
@@ -70,7 +70,7 @@ function save_my_plot_density(plot_data, variable_names;
     title = @sprintf("alpha_rho | 4th order DG | t = %3.2f", time)
     
     Plots.plot(alpha_rho_data, 
-               clim=(1000.0,1035.92), 
+               clim=(1000.0,1035.92), c=:jet1,
                title=title,titlefontsize=9, 
                dpi=300,
                )
@@ -90,7 +90,7 @@ visualization_callback = VisualizationCallback(; interval=500,
                           plot_creator=save_my_plot_density,
                           )
 
-callbacks = CallbackSet(stepsize_callback, alive_callback, time_series)#,visualization_callback)
+callbacks = CallbackSet(stepsize_callback, alive_callback, time_series,visualization_callback)
 
 ###############################################################################
 # run the simulation

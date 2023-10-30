@@ -4,9 +4,9 @@ using Trixi
 using Plots
 using Printf
 
-equations = Gaburro2D(1.0, 2.25*10^9, 1000.0, 0.0)
+equations = ThreeEquationModel2D(1.0, 2.25*10^9, 1000.0, 0.0)
 
-function initial_condition_elliptic(x, t, equations::Gaburro2D)
+function initial_condition_test(x, t, equations::ThreeEquationModel2D)
   
     # liquid domain
     if((x[1]^2 + x[2]^2) <= 1)
@@ -20,17 +20,12 @@ function initial_condition_elliptic(x, t, equations::Gaburro2D)
         v2 = 0.0
         alpha = 10^(-3)
     end
-    phi = 0.0
+    phi = x[2]
     
     return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
-initial_condition = initial_condition_elliptic
-
-boundary_condition = Dict( :Bottom   => boundary_condition_wall,
-                           :Right    => boundary_condition_wall,
-                           :Top      => boundary_condition_wall,
-                           :Left     => boundary_condition_wall);
+initial_condition = initial_condition_test
 
 
 volume_flux = (flux_central, flux_nonconservative_gaburro)
@@ -51,15 +46,16 @@ volume_integral = VolumeIntegralShockCapturingHG(indicator_sc;
 
 solver = DGSEM(basis, surface_flux, volume_integral)
 
-###############################################################################
-# Get the unstructured quad mesh from a file 
-# create the unstructured mesh from your mesh file
-mesh_file = joinpath("out", "tank_elliptic.mesh")
 
-mesh = UnstructuredMesh2D(mesh_file)#, periodicity=true)
+coordinates_min = (-3.0, -3.0) # minimum coordinates (min(x), min(y))
+coordinates_max = ( 3.0,  3.0) # maximum coordinates (max(x), max(y))
 
-semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver,
-                boundary_conditions=boundary_condition)
+# Create a uniformly refined mesh with periodic boundaries
+mesh = TreeMesh(coordinates_min, coordinates_max,
+                initial_refinement_level=5,
+                n_cells_max=400_000)
+
+semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver)
 
 tspan = (0.0, 0.0076)
 ode = semidiscretize(semi, tspan)
@@ -70,11 +66,10 @@ analysis_interval = 100
 
 alive_callback = AliveCallback(analysis_interval=analysis_interval)
 
-stepsize_callback = StepsizeCallback(cfl=0.8)
-
+stepsize_callback = StepsizeCallback(cfl=0.4)
 
 function save_my_plot_density(plot_data, variable_names;
-                              show_mesh=false, plot_arguments=Dict{Symbol,Any}(),
+                              show_mesh=true, plot_arguments=Dict{Symbol,Any}(),
                               time=nothing, timestep=nothing)
     
     alpha_rho_data = plot_data["alpha_rho"]
@@ -90,10 +85,11 @@ function save_my_plot_density(plot_data, variable_names;
     #Plots.plot!(getmesh(plot_data),linewidth=0.4)
   
     # Determine filename and save plot
-    filename = joinpath("out", @sprintf("solution_%06d.png", timestep))
+    filename = joinpath("out", @sprintf("elliptical_drop_%06d.png", timestep))
     Plots.savefig(filename)
 end
 
+#visualization_callback = VisualizationCallback(plot_creator=my_save_plot,interval=10, clims=(0,1.1), show_mesh=true)
 visualization_callback = VisualizationCallback(; interval=500,
                             solution_variables=cons2cons,
                             #variable_names=["rho"],

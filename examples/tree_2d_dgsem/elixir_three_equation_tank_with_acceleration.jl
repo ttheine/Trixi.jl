@@ -6,9 +6,9 @@ using Printf
 using LinearAlgebra
 
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
+equations = ThreeEquationModel2D(1.0, 2.78*10^5, 1000.0, 9.81)
 
-function initial_condition_rest(x, t, equations::Gaburro2D)
+function initial_condition_rest(x, t, equations::ThreeEquationModel2D)
     if(x[2] <= 0.5)
       # liquid domain
       rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 0.5))
@@ -26,7 +26,7 @@ function initial_condition_rest(x, t, equations::Gaburro2D)
     return prim2cons(SVector(rho, v1, v2, alpha, phi), equations)
 end
 
-function initial_condition_oblique(x, t, equations::Gaburro2D)
+function initial_condition_oblique(x, t, equations::ThreeEquationModel2D)
     if(x[2] + 0.5098 * x[1] <= 0.7549)
       # liquid domain
       rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - (0.7549 - 0.5098*x[1])))

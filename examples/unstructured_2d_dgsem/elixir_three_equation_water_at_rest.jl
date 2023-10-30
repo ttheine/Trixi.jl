@@ -5,9 +5,9 @@ using Plots
 using Printf
 using LinearAlgebra
 
-equations = Gaburro2D(1.0, 2.78*10^5, 1000.0, 9.81)
+equations = ThreeEquationModel2D(1.0, 2.78*10^5, 1000.0, 9.81)
 
-function initial_condition_rest(x, t, equations::Gaburro2D)
+function initial_condition_rest(x, t, equations::ThreeEquationModel2D)
     # liquid domain
     rho = equations.rho_0 * exp(-(equations.gravity * equations.rho_0/equations.k0) *(x[2] - 1.0))
     v1 = 0.0
